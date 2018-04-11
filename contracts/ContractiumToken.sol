@@ -65,6 +65,7 @@ contract BasicToken is ERC20Basic {
   function balanceOf(address _owner) public view returns (uint256 balance) {
     return balances[_owner];
   }
+  
 
 }
 
@@ -146,39 +147,72 @@ contract Ownable {
 
 }
 
+contract TokenOffering is StandardToken, Ownable {
+  bool public offeringEnabled;
+  uint256 public currentOfferingAllowance;
+  uint256 public currentOfferingRaised;
 
-contract ContractiumToken is StandardToken, Ownable {
+
+  function isOfferingAccepted(uint256 amount) internal returns (bool) {
+    return (offeringEnabled && currentOfferingRaised + amount <= currentOfferingAllowance); 
+  }
+  
+  function enableOffering() public onlyOwner {
+    offeringEnabled = true;
+  }
+  
+  function stopOffering() public onlyOwner {
+    offeringEnabled = false;
+  }
+
+}
+
+contract ContractiumToken is TokenOffering {
 
   string public constant name = "Contractium";
   string public constant symbol = "CTU";
   uint8 public constant decimals = 18;
-  uint256 public unitsOneEthCanBuy = 15000;
-
-  uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
+  
+  uint256 public constant INITIAL_SUPPLY = 30 * (10 ** uint256(decimals));
+  uint256 public constant INITIAL_TOKEN_OFFERING_ALLOWANCE = 15 * (10 ** uint256(decimals));
+  bool public constant INTIIAL_OFFERING_ENABLED = true;
+  
+  uint256 public unitsOneEthCanBuy = 3;
+  // bool public offeringEnabled;
+  // uint256 public tokenOfferingAllowance;
+  // uint256 public tokenRaisedAmount;
 
   // total ether funds
   uint256 public totalEthInWei;
-  
 
   function ContractiumToken() public {
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
+    currentOfferingAllowance = INITIAL_TOKEN_OFFERING_ALLOWANCE;
+    offeringEnabled = true;
+
     emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
   }
 
   function() payable {
-    totalEthInWei = totalEthInWei + msg.value;
     uint256 amount = msg.value * unitsOneEthCanBuy;
+    if (isOfferingAccepted(amount)) {
+      require(balances[owner] >= amount);
+      totalEthInWei = totalEthInWei + msg.value;
+    
+      currentOfferingRaised = currentOfferingRaised + amount; // increase current amount of tokens offered
+      
+      balances[owner] = balances[owner].sub(amount);
+      balances[msg.sender] = balances[msg.sender].add(amount);
 
-    require(balances[owner] >= amount);
+      Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
 
-    balances[owner] = balances[owner].sub(amount);
-    balances[msg.sender] = balances[msg.sender].add(amount);
-
-    Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
-
-    //Transfer ether to owner
-    owner.transfer(msg.value);                               
+      //Transfer ether to owner
+      owner.transfer(msg.value);         
+    } else {
+      revert();
+    }
+                            
   }
 
 
