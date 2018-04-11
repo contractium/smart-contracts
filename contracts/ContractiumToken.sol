@@ -157,12 +157,20 @@ contract TokenOffering is StandardToken, Ownable {
     return (offeringEnabled && currentOfferingRaised + amount <= currentOfferingAllowance); 
   }
   
-  function enableOffering() public onlyOwner {
-    offeringEnabled = true;
-  }
-  
   function stopOffering() public onlyOwner {
     offeringEnabled = false;
+  }
+  
+  function resumeOffering() public onlyOwner {
+    offeringEnabled = true;
+  }
+
+  function startOffering(uint256 _tokenOfferingAllowance) public onlyOwner returns (bool) {
+    require(_tokenOfferingAllowance <= balances[owner]);
+    currentOfferingRaised = 0;
+    currentOfferingAllowance = _tokenOfferingAllowance;
+    offeringEnabled = true;
+    return true;
   }
 
 }
@@ -173,23 +181,20 @@ contract ContractiumToken is TokenOffering {
   string public constant symbol = "CTU";
   uint8 public constant decimals = 18;
   
-  uint256 public constant INITIAL_SUPPLY = 30 * (10 ** uint256(decimals));
-  uint256 public constant INITIAL_TOKEN_OFFERING_ALLOWANCE = 15 * (10 ** uint256(decimals));
+  uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
+  uint256 public constant INITIAL_TOKEN_OFFERING_ALLOWANCE = 1500000000 * (10 ** uint256(decimals));
   bool public constant INTIIAL_OFFERING_ENABLED = true;
   
-  uint256 public unitsOneEthCanBuy = 3;
-  // bool public offeringEnabled;
-  // uint256 public tokenOfferingAllowance;
-  // uint256 public tokenRaisedAmount;
+  uint256 public unitsOneEthCanBuy = 15000;
 
   // total ether funds
-  uint256 public totalEthInWei;
+  uint256 internal totalEthInWei;
 
   function ContractiumToken() public {
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
     currentOfferingAllowance = INITIAL_TOKEN_OFFERING_ALLOWANCE;
-    offeringEnabled = true;
+    offeringEnabled = INTIIAL_OFFERING_ENABLED;
 
     emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
   }
