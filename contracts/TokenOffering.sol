@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
-import './ERC20/StandardToken.sol';
-import './Ownable.sol';
+import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract TokenOffering is StandardToken, Ownable {
   bool public offeringEnabled;
@@ -10,6 +10,7 @@ contract TokenOffering is StandardToken, Ownable {
 
 
   function isOfferingAccepted(uint256 amount) internal view returns (bool) {
+    require(amount > 0);
     return (offeringEnabled && currentOfferingRaised + amount <= currentOfferingAllowance); 
   }
   

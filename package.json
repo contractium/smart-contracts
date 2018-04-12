@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/contractium/smart-contracts#readme",
   "devDependencies": {
-    "solidity-coverage": "^0.4.15"
+    "solidity-coverage": "^0.4.15",
+    "zeppelin-solidity": "^1.8.0"
   }
 }
