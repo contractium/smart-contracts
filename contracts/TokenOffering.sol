@@ -33,7 +33,7 @@ contract TokenOffering is StandardToken, Ownable {
   function preValidatePurchase(uint256 _amount) internal view returns (bool) {
     require(_amount > 0);
     require(offeringEnabled);
-    require(currentTokenOfferingRaised + _amount <= currentTotalTokenOffering);
+    require(currentTokenOfferingRaised.add(_amount) <= currentTotalTokenOffering);
   }
   
   /**
