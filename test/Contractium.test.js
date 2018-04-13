@@ -25,10 +25,10 @@ contract('ContractiumToken', function (accounts) {
   });
 
   it("should have an initial offering allowance of 1.5 billion tokens", async () => {
-    let currentOfferingAllowance = await instanceDefault.currentOfferingAllowance();
-    let currentOfferingRaised = await instanceDefault.currentOfferingRaised();
-    assert.equal(currentOfferingAllowance, 1.5e+27);
-    assert.equal(currentOfferingRaised, 0);
+    let currentTotalTokenOffering = await instanceDefault.currentTotalTokenOffering();
+    let currentTokenOfferingRaised = await instanceDefault.currentTokenOfferingRaised();
+    assert.equal(currentTotalTokenOffering, 1.5e+27);
+    assert.equal(currentTokenOfferingRaised, 0);
   });
 
   it("should be received 15000 tokens when send eth to contract", async () => {
@@ -54,11 +54,11 @@ contract('ContractiumToken', function (accounts) {
   it("should start offering", async () => {
     let instance = await ContractiumToken.deployed();
     let result = await instance.startOffering(1.5e+27);
-    let currentOfferingRaised = (await instance.currentOfferingRaised()).toNumber();
-    let currentOfferingAllowance = (await instance.currentOfferingAllowance()).toNumber();
+    let currentTokenOfferingRaised = (await instance.currentTokenOfferingRaised()).toNumber();
+    let currentTotalTokenOffering = (await instance.currentTotalTokenOffering()).toNumber();
     let offeringEnabled = await instance.offeringEnabled();
-    assert.equal(currentOfferingRaised, 0);
-    assert.equal(currentOfferingAllowance, 1.5e+27);
+    assert.equal(currentTokenOfferingRaised, 0);
+    assert.equal(currentTotalTokenOffering, 1.5e+27);
     assert.equal(offeringEnabled, true);
 
     let sendFrom = accounts[2];

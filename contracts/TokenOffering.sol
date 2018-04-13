@@ -3,29 +3,61 @@ pragma solidity ^0.4.21;
 import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
+/**
+ * @title Offer to sell tokens
+ */
 contract TokenOffering is StandardToken, Ownable {
+  
   bool public offeringEnabled;
-  uint256 public currentOfferingAllowance;
-  uint256 public currentOfferingRaised;
 
+  // maximum amount of tokens being sold in current offering session
+  uint256 public currentTotalTokenOffering;
 
-  function isOfferingAccepted(uint256 amount) internal view returns (bool) {
-    require(amount > 0);
-    return (offeringEnabled && currentOfferingRaised + amount <= currentOfferingAllowance); 
+  // amount of tokens raised in current offering session
+  uint256 public currentTokenOfferingRaised;
+
+  /**
+   * @dev Check for fundraising in current offering
+   * @param _amount amount of tokens in wei want to buy
+   * @return accept or not accept to fund
+   */
+  // function isOfferingAccepted(uint256 _amount) internal view returns (bool) {
+  //   require(_amount > 0);
+  //   return (offeringEnabled && currentTokenOfferingRaised + _amount <= currentTotalTokenOffering); 
+  // }
+
+  /**
+   * @dev Validation of fundraising in current offering
+   * @param _amount amount of tokens in wei want to buy
+   */
+  function preValidatePurchase(uint256 _amount) internal view returns (bool) {
+    require(_amount > 0);
+    require(offeringEnabled);
+    require(currentTokenOfferingRaised + _amount <= currentTotalTokenOffering);
   }
   
+  /**
+   * @dev Stop selling in current offering session
+   */
   function stopOffering() public onlyOwner {
     offeringEnabled = false;
   }
   
+  /**
+   * @dev Resume selling in current offering session
+   */
   function resumeOffering() public onlyOwner {
     offeringEnabled = true;
   }
 
-  function startOffering(uint256 _tokenOfferingAllowance) public onlyOwner returns (bool) {
-    require(_tokenOfferingAllowance <= balances[owner]);
-    currentOfferingRaised = 0;
-    currentOfferingAllowance = _tokenOfferingAllowance;
+  /**
+   * @dev Start a new offering session
+   * @param _tokenOffering amount of token in offering session
+   */
+  function startOffering(uint256 _tokenOffering) public onlyOwner returns (bool) {
+    require(_tokenOffering <= balances[owner]);
+    currentTokenOfferingRaised = 0;
+    currentTotalTokenOffering = _tokenOffering;
     offeringEnabled = true;
     return true;
   }

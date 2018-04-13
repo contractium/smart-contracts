@@ -9,41 +9,43 @@ contract ContractiumToken is TokenOffering {
   uint8 public constant decimals = 18;
   
   uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
-  uint256 public constant INITIAL_TOKEN_OFFERING_ALLOWANCE = 1500000000 * (10 ** uint256(decimals));
-  bool public constant INTIIAL_OFFERING_ENABLED = true;
+  uint256 public constant INITIAL_TOKEN_OFFERING = 1500000000 * (10 ** uint256(decimals));
   
   uint256 public unitsOneEthCanBuy = 15000;
 
   // total ether funds
-  uint256 internal totalEthInWei;
+  uint256 internal totalWeiRaised;
 
   function ContractiumToken() public {
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
-    currentOfferingAllowance = INITIAL_TOKEN_OFFERING_ALLOWANCE;
-    offeringEnabled = INTIIAL_OFFERING_ENABLED;
+    
+    startOffering(INITIAL_TOKEN_OFFERING);
 
     emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
   }
 
   function() public payable {
+    require(msg.sender != owner);
+
+    // number of tokens to sale in wei
     uint256 amount = msg.value * unitsOneEthCanBuy;
-    if (isOfferingAccepted(amount)) {
-      require(balances[owner] >= amount);
-      totalEthInWei = totalEthInWei + msg.value;
+    preValidatePurchase(amount);
+    require(balances[owner] >= amount);
     
-      currentOfferingRaised = currentOfferingRaised + amount; // increase current amount of tokens offered
-      
-      balances[owner] = balances[owner].sub(amount);
-      balances[msg.sender] = balances[msg.sender].add(amount);
+    totalWeiRaised = totalWeiRaised + msg.value;
+  
+    // increase current amount of tokens offered
+    currentTokenOfferingRaised = currentTokenOfferingRaised + amount; 
+    
+    balances[owner] = balances[owner].sub(amount);
+    balances[msg.sender] = balances[msg.sender].add(amount);
 
-      emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
+    emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
 
-      //Transfer ether to owner
-      owner.transfer(msg.value);         
-    } else {
-      revert();
-    }
+    //Transfer ether to owner
+    owner.transfer(msg.value);         
+ 
                             
   }
 
