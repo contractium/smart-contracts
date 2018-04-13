@@ -30,7 +30,7 @@ contract TokenOffering is StandardToken, Ownable {
    * @dev Validation of fundraising in current offering
    * @param _amount amount of tokens in wei want to buy
    */
-  function preValidatePurchase(uint256 _amount) internal view returns (bool) {
+  function preValidatePurchase(uint256 _amount) internal {
     require(_amount > 0);
     require(offeringEnabled);
     require(currentTokenOfferingRaised.add(_amount) <= currentTotalTokenOffering);
