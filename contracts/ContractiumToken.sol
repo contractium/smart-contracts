@@ -1,8 +1,10 @@
 pragma solidity ^0.4.21;
+pragma experimental ABIEncoderV2;
 
 import './TokenOffering.sol';
+import './WithdrawTrack.sol';
 
-contract ContractiumToken is TokenOffering {
+contract ContractiumToken is TokenOffering, WithdrawTrack {
 
   string public constant name = "Contractium";
   string public constant symbol = "CTU";

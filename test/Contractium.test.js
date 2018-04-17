@@ -110,4 +110,21 @@ contract('ContractiumToken', function (accounts) {
     assert.equal(result, false);
   });
 
+  it("should withdraw tokens by only owner", async () => {
+    await instanceDefault.withdrawToken(accounts[3], 15000e+18, "0")
+      .then(result => success = true)
+      .catch(err => success = false);
+    assert.equal(success, true);  
+    let balance = (await instanceDefault.balanceOf(accounts[3])).toNumber();
+    assert.equal(balance, 15000e+18);
+  });
+
+  it("should not withdraw tokens by another account", async () => {
+    let success = true;
+    await instanceDefault.withdrawToken(accounts[3], 15000e+18, "0", {from: accounts[1]})
+      .then(result => success = true)
+      .catch(err => success = false);
+    assert.equal(success, false);  
+  });
+
 });
