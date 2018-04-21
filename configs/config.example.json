@@ -1,0 +1,10 @@
+{
+  "development": {
+    "private_key": "<privKey>",
+    "provider_url": "http://localhost:8545"
+  },
+  "ropsten": {
+    "private_key": "<privKey>",
+    "provider_url": "https://ropsten.infura.io/RHSomDpAb1RQ132mEAtc"
+  }
+}

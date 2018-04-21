@@ -22,5 +22,8 @@
   "devDependencies": {
     "solidity-coverage": "^0.4.15",
     "zeppelin-solidity": "^1.8.0"
+  },
+  "dependencies": {
+    "truffle-hdwallet-provider-privkey": "^0.2.0"
   }
 }
