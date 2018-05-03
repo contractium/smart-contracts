@@ -24,10 +24,10 @@ contract('ContractiumToken', function (accounts) {
     assert.equal(offeringEnabled, true);
   });
 
-  it("should have an initial offering allowance of 1.5 billion tokens", async () => {
+  it("should have an initial offering allowance of 900 million tokens", async () => {
     let currentTotalTokenOffering = await instanceDefault.currentTotalTokenOffering();
     let currentTokenOfferingRaised = await instanceDefault.currentTokenOfferingRaised();
-    assert.equal(currentTotalTokenOffering, 1.5e+27);
+    assert.equal(currentTotalTokenOffering, 0.9e+27);
     assert.equal(currentTokenOfferingRaised, 0);
   });
 

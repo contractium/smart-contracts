@@ -11,7 +11,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
   uint8 public constant decimals = 18;
   
   uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
-  uint256 public constant INITIAL_TOKEN_OFFERING = 1500000000 * (10 ** uint256(decimals));
+  uint256 public constant INITIAL_TOKEN_OFFERING = 900000000 * (10 ** uint256(decimals));
   
   uint256 public unitsOneEthCanBuy = 15000;
 
@@ -31,14 +31,21 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
     require(msg.sender != owner);
 
     // number of tokens to sale in wei
-    uint256 amount = msg.value * unitsOneEthCanBuy;
+    uint256 amount = msg.value.mul(unitsOneEthCanBuy);
+
+    // amount of bonus tokens
+    uint256 amountBonus = msg.value.mul(bonusRateOneEth);
+    
+    // amount with bonus value
+    amount = amount.add(amountBonus);
+
     preValidatePurchase(amount);
     require(balances[owner] >= amount);
     
-    totalWeiRaised = totalWeiRaised + msg.value;
+    totalWeiRaised = totalWeiRaised.add(msg.value);
   
     // increase current amount of tokens offered
-    currentTokenOfferingRaised = currentTokenOfferingRaised + amount; 
+    currentTokenOfferingRaised = currentTokenOfferingRaised.add(amount); 
     
     balances[owner] = balances[owner].sub(amount);
     balances[msg.sender] = balances[msg.sender].add(amount);
@@ -46,9 +53,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
     emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
 
     //Transfer ether to owner
-    owner.transfer(msg.value);         
- 
-                            
+    owner.transfer(msg.value);                        
   }
 
 }
