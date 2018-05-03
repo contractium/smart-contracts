@@ -127,4 +127,37 @@ contract('ContractiumToken', function (accounts) {
     assert.equal(success, false);  
   });
 
+  it("should allow owner to set bonus rate", async () => {
+    let success = true;
+    let _bonusRate = 1000;
+    await instanceDefault.setBonusRate(_bonusRate)
+      .then(result => success = true)
+      .catch(err => success = false);
+    let bonusRateOneEth = (await instanceDefault.bonusRateOneEth()).toNumber();
+    assert.equal(bonusRateOneEth, _bonusRate);
+    assert.equal(success, true);  
+  });
+
+  it("should not allow users who are not owner to set bonus rate", async () => {
+    let success = true;
+    let _bonusRate = 1000;
+    await instanceDefault.setBonusRate(_bonusRate, {from: accounts[1]})
+      .then(result => success = true)
+      .catch(err => success = false);
+    assert.equal(success, false);  
+  });
+
+  it("should be received bonus token", async () => {
+    // bonusRate = 1000
+    let sendFrom = accounts[4];
+    let gasLimit = web3.toWei(1, "Gwei"); // wei
+    let balanceSenderBefore = (await instanceDefault.balanceOf(sendFrom)).toNumber();
+
+    await instanceDefault.sendTransaction({from: sendFrom, value: web3.toWei(1, "ether"), gasLimit: gasLimit });
+
+    let balanceSenderAfter = (await instanceDefault.balanceOf(sendFrom)).toNumber();
+    assert.equal(balanceSenderAfter - balanceSenderBefore, 16000e18)
+    
+  });
+
 });
