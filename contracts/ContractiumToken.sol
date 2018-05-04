@@ -1,5 +1,4 @@
 pragma solidity ^0.4.21;
-pragma experimental ABIEncoderV2;
 
 import './TokenOffering.sol';
 import './WithdrawTrack.sol';
