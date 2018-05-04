@@ -53,23 +53,25 @@ contract('ContractiumToken', function (accounts) {
 
   it("should start offering", async () => {
     let instance = await ContractiumToken.deployed();
-    let result = await instance.startOffering(1.5e+27);
+    let result = await instance.startOffering(1.5e+27, 1000);
     let currentTokenOfferingRaised = (await instance.currentTokenOfferingRaised()).toNumber();
     let currentTotalTokenOffering = (await instance.currentTotalTokenOffering()).toNumber();
     let offeringEnabled = await instance.offeringEnabled();
+    let bonusRateOneEth = await instance.bonusRateOneEth();
     assert.equal(currentTokenOfferingRaised, 0);
     assert.equal(currentTotalTokenOffering, 1.5e+27);
     assert.equal(offeringEnabled, true);
+    assert.equal(bonusRateOneEth, 1000);
 
     let sendFrom = accounts[2];
     await instance.sendTransaction({from: sendFrom, value: web3.toWei(1, "ether")});
     let balance = (await instance.balanceOf(sendFrom)).toNumber();
-    assert.equal(balance, 15e+21);
+    assert.equal(balance, 16e+21);
   });
 
   it("should not allow offering over offering allowance", async () => {
     let sendFrom = accounts[3];
-    let result = await instanceDefault.startOffering(30000 * 1e18);
+    let result = await instanceDefault.startOffering(30000 * 1e18, 0);
     let balanceBefore = (await instanceDefault.balanceOf(sendFrom)).toNumber();
     
     // send ether to contract
@@ -88,7 +90,7 @@ contract('ContractiumToken', function (accounts) {
     let success = true;
     let randomOfferingAmount = 1.23456e+27;
     let instance = await ContractiumToken.deployed();
-    await instance.startOffering(randomOfferingAmount, {from: accounts[1]})
+    await instance.startOffering(randomOfferingAmount, 0, {from: accounts[1]})
       .then(result => success = true)
       .catch(err => success = false);
     assert.equal(success, false);  

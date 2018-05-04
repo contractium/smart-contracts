@@ -64,12 +64,14 @@ contract TokenOffering is StandardToken, Ownable {
   /**
    * @dev Start a new offering session
    * @param _tokenOffering amount of token in offering session
+   * @param _bonusRateOneEth number of bonus tokens per one ETH
    */
-  function startOffering(uint256 _tokenOffering) public onlyOwner returns (bool) {
+  function startOffering(uint256 _tokenOffering, uint256 _bonusRateOneEth) public onlyOwner returns (bool) {
     require(_tokenOffering <= balances[owner]);
     currentTokenOfferingRaised = 0;
     currentTotalTokenOffering = _tokenOffering;
     offeringEnabled = true;
+    setBonusRate(_bonusRateOneEth);
     return true;
   }
 

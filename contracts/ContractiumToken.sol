@@ -12,6 +12,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
   
   uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
   uint256 public constant INITIAL_TOKEN_OFFERING = 900000000 * (10 ** uint256(decimals));
+  uint256 public constant INITIAL_BONUSRATE_ONE_ETH = 0;
   
   uint256 public unitsOneEthCanBuy = 15000;
 
@@ -22,7 +23,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
     
-    startOffering(INITIAL_TOKEN_OFFERING);
+    startOffering(INITIAL_TOKEN_OFFERING, INITIAL_BONUSRATE_ONE_ETH);
 
     emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
   }
