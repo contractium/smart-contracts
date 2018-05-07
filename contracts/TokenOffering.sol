@@ -16,6 +16,17 @@ contract TokenOffering is StandardToken, Ownable {
   // amount of tokens raised in current offering session
   uint256 public currentTokenOfferingRaised;
 
+  // number of bonus tokens per one ETH
+  uint256 public bonusRateOneEth;
+
+  /**
+   * @dev
+   * @param _bonusRateOneEth number of bonus tokens per one ETH
+   */
+  function setBonusRate(uint256 _bonusRateOneEth) public onlyOwner {
+    bonusRateOneEth = _bonusRateOneEth;
+  }
+
   /**
    * @dev Check for fundraising in current offering
    * @param _amount amount of tokens in wei want to buy
@@ -53,12 +64,14 @@ contract TokenOffering is StandardToken, Ownable {
   /**
    * @dev Start a new offering session
    * @param _tokenOffering amount of token in offering session
+   * @param _bonusRateOneEth number of bonus tokens per one ETH
    */
-  function startOffering(uint256 _tokenOffering) public onlyOwner returns (bool) {
+  function startOffering(uint256 _tokenOffering, uint256 _bonusRateOneEth) public onlyOwner returns (bool) {
     require(_tokenOffering <= balances[owner]);
     currentTokenOfferingRaised = 0;
     currentTotalTokenOffering = _tokenOffering;
     offeringEnabled = true;
+    setBonusRate(_bonusRateOneEth);
     return true;
   }
 

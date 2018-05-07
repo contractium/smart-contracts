@@ -4,3 +4,4 @@ coverage/
 coverage.json
 configs/config.json
 yarn.lock
+Flattened.sol
