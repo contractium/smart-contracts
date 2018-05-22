@@ -2,77 +2,164 @@ pragma solidity ^0.4.21;
 
 import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 
 /**
  * @title Offer to sell tokens
  */
-contract TokenOffering is StandardToken, Ownable {
+contract TokenOffering is StandardToken, Ownable, BurnableToken {
   
-  bool public offeringEnabled;
+    bool public offeringEnabled;
 
-  // maximum amount of tokens being sold in current offering session
-  uint256 public currentTotalTokenOffering;
+    // maximum amount of tokens being sold in current offering session
+    uint256 public currentTotalTokenOffering;
 
-  // amount of tokens raised in current offering session
-  uint256 public currentTokenOfferingRaised;
+    // amount of tokens raised in current offering session
+    uint256 public currentTokenOfferingRaised;
 
-  // number of bonus tokens per one ETH
-  uint256 public bonusRateOneEth;
+    // number of bonus tokens per one ETH
+    uint256 public bonusRateOneEth;
 
-  /**
-   * @dev
-   * @param _bonusRateOneEth number of bonus tokens per one ETH
-   */
-  function setBonusRate(uint256 _bonusRateOneEth) public onlyOwner {
-    bonusRateOneEth = _bonusRateOneEth;
-  }
+    // Start and end timestamps
+    uint256 public startTime;
+    uint256 public endTime;
 
-  /**
-   * @dev Check for fundraising in current offering
-   * @param _amount amount of tokens in wei want to buy
-   * @return accept or not accept to fund
-   */
-  // function isOfferingAccepted(uint256 _amount) internal view returns (bool) {
-  //   require(_amount > 0);
-  //   return (offeringEnabled && currentTokenOfferingRaised + _amount <= currentTotalTokenOffering); 
-  // }
+    bool public isBurnInClose = false;
 
-  /**
-   * @dev Validation of fundraising in current offering
-   * @param _amount amount of tokens in wei want to buy
-   */
-  function preValidatePurchase(uint256 _amount) internal {
-    require(_amount > 0);
-    require(offeringEnabled);
-    require(currentTokenOfferingRaised.add(_amount) <= currentTotalTokenOffering);
-  }
-  
-  /**
-   * @dev Stop selling in current offering session
-   */
-  function stopOffering() public onlyOwner {
-    offeringEnabled = false;
-  }
-  
-  /**
-   * @dev Resume selling in current offering session
-   */
-  function resumeOffering() public onlyOwner {
-    offeringEnabled = true;
-  }
+    event OfferingOpens(uint256 startTime, uint256 endTime, uint256 totalTokenOffering, uint256 bonusRateOneEth);
 
-  /**
-   * @dev Start a new offering session
-   * @param _tokenOffering amount of token in offering session
-   * @param _bonusRateOneEth number of bonus tokens per one ETH
-   */
-  function startOffering(uint256 _tokenOffering, uint256 _bonusRateOneEth) public onlyOwner returns (bool) {
-    require(_tokenOffering <= balances[owner]);
-    currentTokenOfferingRaised = 0;
-    currentTotalTokenOffering = _tokenOffering;
-    offeringEnabled = true;
-    setBonusRate(_bonusRateOneEth);
-    return true;
-  }
+    /**
+    * @dev
+    * @param _bonusRateOneEth number of bonus tokens per one ETH
+    */
+    function setBonusRate(uint256 _bonusRateOneEth) public onlyOwner {
+        bonusRateOneEth = _bonusRateOneEth;
+    }
 
+    /**
+    * @dev Check for fundraising in current offering
+    * @param _amount amount of tokens in wei want to buy
+    * @return accept or not accept to fund
+    */
+    // function isOfferingAccepted(uint256 _amount) internal view returns (bool) {
+    //   require(_amount > 0);
+    //   return (offeringEnabled && currentTokenOfferingRaised + _amount <= currentTotalTokenOffering); 
+    // }
+
+    /**
+    * @dev Validation of fundraising in current offering
+    * @param _amount amount of tokens in wei want to buy
+    */
+    function preValidatePurchase(uint256 _amount) internal {
+        require(_amount > 0);
+        require(offeringEnabled);
+        require(currentTokenOfferingRaised.add(_amount) <= currentTotalTokenOffering);
+        require(block.timestamp >= startTime && block.timestamp <= endTime);
+    }
+    
+    /**
+    * @dev Stop selling in current offering session
+    */
+    function stopOffering() public onlyOwner {
+        offeringEnabled = false;
+    }
+    
+    /**
+    * @dev Resume selling in current offering session
+    */
+    function resumeOffering() public onlyOwner {
+        offeringEnabled = true;
+    }
+
+    /**
+    * @dev Start a new offering session
+    * @param _tokenOffering amount of token in offering session
+    * @param _bonusRateOneEth number of bonus tokens per one ETH
+    */
+    function startOffering(
+        uint256 _tokenOffering, 
+        uint256 _bonusRateOneEth, 
+        uint256 _startTime, 
+        uint256 _endTime,
+        bool _isBurnInClose
+    ) public onlyOwner returns (bool) {
+        require(_tokenOffering <= balances[owner]);
+        require(_startTime <= _endTime);
+        require(_startTime >= block.timestamp);
+
+        // set offering time
+        startTime = _startTime;
+        endTime = _endTime;
+
+        // set burnable
+        isBurnInClose = _isBurnInClose;
+
+        // set offering cap
+        currentTokenOfferingRaised = 0;
+        currentTotalTokenOffering = _tokenOffering;
+        offeringEnabled = true;
+        setBonusRate(_bonusRateOneEth);
+
+        emit OfferingOpens(startTime, endTime, currentTotalTokenOffering, bonusRateOneEth);
+        return true;
+    }
+
+    /**
+    * @dev Update start timestamp
+    * @param _startTime start timestamp
+    */
+    function updateStartTime(uint256 _startTime) public onlyOwner {
+        require(_startTime <= endTime);
+        require(_startTime >= block.timestamp);
+        startTime = _startTime;
+    }
+
+    /**
+    * @dev Update end timestamp
+    * @param _endTime end timestamp
+    */
+    function updateEndTime(uint256 _endTime) public onlyOwner {
+        require(_endTime <= startTime);
+        endTime = _endTime;
+    }
+
+    /**
+    * @dev Check closing offering
+    */
+    function hasCloseOffering() internal returns(bool) {
+        return (block.timestamp > endTime || currentTokenOfferingRaised >= currentTotalTokenOffering);
+    }
+
+    /**
+    * @dev End offering
+    */
+    function endOffering() internal {
+        if (isBurnInClose) {
+            burnRemainTokenOffering();
+        }
+        resetOfferingStatus();
+    }
+
+    /**
+    * @dev Check closing offering
+    */
+    function burnRemainTokenOffering() internal {
+        if (currentTokenOfferingRaised <  currentTotalTokenOffering) {
+            uint256 remainTokenOffering = currentTotalTokenOffering.sub(currentTokenOfferingRaised);
+            _burn(owner, remainTokenOffering);
+        }
+    }
+
+    /**
+    * @dev Reset offering status
+    */
+    function resetOfferingStatus() internal {
+        startTime = 0;
+        endTime = 0;
+        currentTotalTokenOffering = 0;
+        currentTokenOfferingRaised = 0;
+        bonusRateOneEth = 0;
+        offeringEnabled = false;
+        isBurnInClose = false;
+    }
 }
