@@ -18,3 +18,7 @@
 4. Choose solidity compiler version: `v0.4.21+commit.dfe3193c`.
 5. Enable optimizer.
 6. Submit. 
+
+## Testing
+1. Run local Ethereum client: `ganache-cli --a 4`
+2. Run test: `truffle test`

@@ -20,13 +20,16 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     // number of bonus tokens per one ETH
     uint256 public bonusRateOneEth;
 
-    // Start and end timestamps
+    // Start and end timestamps in seconds
     uint256 public startTime;
     uint256 public endTime;
 
     bool public isBurnInClose = false;
 
+    bool public isOfferingStarted = false;
+
     event OfferingOpens(uint256 startTime, uint256 endTime, uint256 totalTokenOffering, uint256 bonusRateOneEth);
+    event OfferingCloses(uint256 endTime, uint256 tokenOfferingRaised);
 
     /**
     * @dev
@@ -75,6 +78,9 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     * @dev Start a new offering session
     * @param _tokenOffering amount of token in offering session
     * @param _bonusRateOneEth number of bonus tokens per one ETH
+    * @param _startTime start timestamp in seconds
+    * @param _endTime end timestamp in seconds
+    * @param _isBurnInClose otional to burn remain offering toke remain
     */
     function startOffering(
         uint256 _tokenOffering, 
@@ -87,11 +93,16 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
         require(_startTime <= _endTime);
         require(_startTime >= block.timestamp);
 
-        // set offering time
+        // close current offering before start another offering
+        require(!isOfferingStarted);
+
+        isOfferingStarted = true;
+
+        // set offering timestamp
         startTime = _startTime;
         endTime = _endTime;
 
-        // set burnable
+        // set burnable option
         isBurnInClose = _isBurnInClose;
 
         // set offering cap
@@ -109,6 +120,7 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     * @param _startTime start timestamp
     */
     function updateStartTime(uint256 _startTime) public onlyOwner {
+        require(isOfferingStarted);
         require(_startTime <= endTime);
         require(_startTime >= block.timestamp);
         startTime = _startTime;
@@ -116,35 +128,37 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
 
     /**
     * @dev Update end timestamp
-    * @param _endTime end timestamp
+    * @param _endTime end timestamp in seconds
     */
     function updateEndTime(uint256 _endTime) public onlyOwner {
+        require(isOfferingStarted);
         require(_endTime <= startTime);
         endTime = _endTime;
     }
 
     /**
-    * @dev Check closing offering
+    * @dev Check closed offering
     */
-    function hasCloseOffering() internal returns(bool) {
+    function hasClosedOffering() internal returns(bool) {
         return (block.timestamp > endTime || currentTokenOfferingRaised >= currentTotalTokenOffering);
     }
 
     /**
-    * @dev End offering
+    * @dev Close offering
     */
-    function endOffering() internal {
+    function endOffering() public onlyOwner {
         if (isBurnInClose) {
             burnRemainTokenOffering();
         }
+        emit OfferingCloses(endTime, currentTokenOfferingRaised);
         resetOfferingStatus();
     }
 
     /**
-    * @dev Check closing offering
+    * @dev Burn remain token offering from owner balance
     */
     function burnRemainTokenOffering() internal {
-        if (currentTokenOfferingRaised <  currentTotalTokenOffering) {
+        if (currentTokenOfferingRaised < currentTotalTokenOffering) {
             uint256 remainTokenOffering = currentTotalTokenOffering.sub(currentTokenOfferingRaised);
             _burn(owner, remainTokenOffering);
         }
@@ -154,6 +168,7 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     * @dev Reset offering status
     */
     function resetOfferingStatus() internal {
+        isOfferingStarted = false;        
         startTime = 0;
         endTime = 0;
         currentTotalTokenOffering = 0;
