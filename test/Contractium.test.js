@@ -338,6 +338,31 @@ contract('TokenOffering', function (accounts) {
     assertRevert(instanceDefault.updateStartTime(newEndTime))  
   });
 
+  it("should not update burnable token", async () => {
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, false)
+
+    assertRevert(instanceDefault.updateBurnableStatus(true))  
+  });
+
+  it("should update burnable token", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    await instanceDefault.startOffering(9e26, 1000, startTime, endTime, true);
+
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+
+    let currentBurnableStatus = await instanceDefault.isBurnInClose();
+    assert.equal(currentBurnableStatus, true)
+
+    await instanceDefault.updateBurnableStatus(false);
+
+    assert.equal( await instanceDefault.isBurnInClose(), false )
+    
+  });
+
 });
 
 

@@ -138,6 +138,15 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     }
 
     /**
+    * @dev Update burnable status when closing offering
+    * @param _isBurnInClose burnable status
+    */
+    function updateBurnableStatus(bool _isBurnInClose) public onlyOwner {
+        require(isOfferingStarted);
+        isBurnInClose = _isBurnInClose;
+    }
+
+    /**
     * @dev Close offering
     */
     function endOffering() public onlyOwner {
