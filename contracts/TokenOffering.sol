@@ -55,6 +55,7 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     */
     function preValidatePurchase(uint256 _amount) internal {
         require(_amount > 0);
+        require(isOfferingStarted);
         require(offeringEnabled);
         require(currentTokenOfferingRaised.add(_amount) <= currentTotalTokenOffering);
         require(block.timestamp >= startTime && block.timestamp <= endTime);
@@ -132,15 +133,8 @@ contract TokenOffering is StandardToken, Ownable, BurnableToken {
     */
     function updateEndTime(uint256 _endTime) public onlyOwner {
         require(isOfferingStarted);
-        require(_endTime <= startTime);
+        require(_endTime >= startTime);
         endTime = _endTime;
-    }
-
-    /**
-    * @dev Check closed offering
-    */
-    function hasClosedOffering() internal returns(bool) {
-        return (block.timestamp > endTime || currentTokenOfferingRaised >= currentTotalTokenOffering);
     }
 
     /**

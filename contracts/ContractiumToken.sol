@@ -24,45 +24,34 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
     }
 
     function() public payable {
-        require(isOfferingStarted);
 
-        if (hasClosedOffering()) {
-            
-            // close offering
-            endOffering();
+        require(msg.sender != owner);
 
-            // return ether to sender
-            msg.sender.transfer(msg.value);  
+        // number of tokens to sale in wei
+        uint256 amount = msg.value.mul(unitsOneEthCanBuy);
 
-        } else {
-            require(msg.sender != owner);
-
-            // number of tokens to sale in wei
-            uint256 amount = msg.value.mul(unitsOneEthCanBuy);
-
-            // amount of bonus tokens
-            uint256 amountBonus = msg.value.mul(bonusRateOneEth);
-            
-            // amount with bonus value
-            amount = amount.add(amountBonus);
-
-            // validate 
-            preValidatePurchase(amount);
-            require(balances[owner] >= amount);
-            
-            totalWeiRaised = totalWeiRaised.add(msg.value);
+        // amount of bonus tokens
+        uint256 amountBonus = msg.value.mul(bonusRateOneEth);
         
-            // increase current amount of tokens offered
-            currentTokenOfferingRaised = currentTokenOfferingRaised.add(amount); 
-            
-            balances[owner] = balances[owner].sub(amount);
-            balances[msg.sender] = balances[msg.sender].add(amount);
+        // amount with bonus value
+        amount = amount.add(amountBonus);
 
-            emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
+        // offering validation
+        preValidatePurchase(amount);
+        require(balances[owner] >= amount);
+        
+        totalWeiRaised = totalWeiRaised.add(msg.value);
+    
+        // increase current amount of tokens offered
+        currentTokenOfferingRaised = currentTokenOfferingRaised.add(amount); 
+        
+        balances[owner] = balances[owner].sub(amount);
+        balances[msg.sender] = balances[msg.sender].add(amount);
 
-            //Transfer ether to owner
-            owner.transfer(msg.value);  
-        }
+        emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
+
+        //Transfer ether to owner
+        owner.transfer(msg.value);  
                               
     }
 

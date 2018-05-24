@@ -178,20 +178,49 @@ contract('ContractiumToken', function (accounts) {
 });
 
 contract('TokenOffering', function (accounts) {
+
+  it("should burn remain token when closing offering", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    let totalOfferingTokens = 9e26;
+    let currentTotalSupply = (await instanceDefault.totalSupply()).toNumber();
+    await instanceDefault.startOffering(totalOfferingTokens, 1000, startTime, endTime, true);
+
+    // check offering is started
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+    let isBurnInClose = await instanceDefault.isBurnInClose();
+    assert.equal(isBurnInClose, true)
+
+    // a user buys tokens
+    let sendFrom = accounts[2];
+    await instanceDefault.sendTransaction({from: sendFrom, value: web3.toWei(1, "ether")});
+    let tokenBought = (await instanceDefault.balanceOf(sendFrom)).toNumber();
+
+    await instanceDefault.endOffering();
+    isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, false);
+
+    // check remain tokens burned
+    let totalSupplyAfter = (await instanceDefault.totalSupply()).toNumber();
+    let totalSupplyShouldBe = currentTotalSupply - totalOfferingTokens + tokenBought;
+    let ownerBalance = (await instanceDefault.balanceOf(accounts[0])).toNumber()
+    assert.equal(new BigNumber(currentTotalSupply).sub(totalOfferingTokens), ownerBalance)
+    assert.equal(totalSupplyAfter, new BigNumber(ownerBalance).plus(tokenBought));
+    assert.equal(totalSupplyAfter, new BigNumber(2.1e27).plus(tokenBought));
+  });
+
   it("should end offering", async () => {
     let now = new Date();
     let startTime = Math.floor(now.getTime()/1000);
     let endTime = Math.floor(now.getTime()/1000);
-
-    await instanceDefault.startOffering(9e26, 1000, startTime, endTime, true);
-
+    await instanceDefault.startOffering(9e26, 1000, startTime, endTime, false);
     let sendFrom = accounts[2];
     await instanceDefault.sendTransaction({from: sendFrom, value: web3.toWei(1, "ether")});
     let balance = (await instanceDefault.balanceOf(sendFrom)).toNumber();
-    assert.equal(balance, 16e+21);
-
+    assert.equal(balance, 32e+21);
     await instanceDefault.endOffering();
-
     let isRevert = false;
 
     try {
@@ -201,7 +230,7 @@ contract('TokenOffering', function (accounts) {
     }
     assert.equal(isRevert, true);
     balance = (await instanceDefault.balanceOf(sendFrom)).toNumber();
-    assert.equal(balance, 16e+21);
+    assert.equal(balance, 32e+21);
 
     let currentTotalTokenOffering = (await instanceDefault.currentTotalTokenOffering()).toNumber();
     assert.equal(currentTotalTokenOffering, 0);
@@ -209,4 +238,116 @@ contract('TokenOffering', function (accounts) {
     let isOfferingStarted = await instanceDefault.isOfferingStarted();
     assert.equal(isOfferingStarted, false)
   });
+
+  it("should close current offering before start new one", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    
+    await instanceDefault.startOffering(10000e18, 1000, startTime, endTime, false);
+   
+    assertRevert(instanceDefault.startOffering(10000e18, 1000, startTime, endTime, false))
+  });
+
+  it("should update start timestamp", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    // await instanceDefault.startOffering(9e26, 1000, startTime, endTime, true);
+
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+
+    now = new Date();
+    let newStartTime = Math.floor(now.setDate(now.getDate() + 1)/1000);
+
+    await instanceDefault.updateStartTime(newStartTime);
+    let currentStartTime = await instanceDefault.startTime();
+    assert.equal(newStartTime, currentStartTime);
+  });
+
+  it("should not update start timestamp over end timestamp", async () => {
+    await instanceDefault.endOffering();
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    await instanceDefault.startOffering(9e26, 1000, startTime, endTime, false);
+
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+
+    let newStartTime = Math.floor(now.setDate(now.getDate() + 10)/1000);
+
+    assertRevert(instanceDefault.updateStartTime(newStartTime))
+
+    let currentStartTime = (await instanceDefault.startTime()).toNumber();
+    assert.notEqual(newStartTime, currentStartTime);
+    assert.equal(startTime, currentStartTime);
+  });
+
+  it("should not update start timestamp in closed offering", async () => {
+    await instanceDefault.endOffering();
+
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, false)
+
+    let now = new Date();
+    let newStartTime = Math.floor(now.setDate(now.getDate() + 10)/1000);
+    assertRevert(instanceDefault.updateStartTime(newStartTime))  
+  });
+
+  it("should update end timestamp", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 5)/1000);
+    await instanceDefault.startOffering(9e26, 1000, startTime, endTime, false);
+  
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+  
+    now = new Date();
+    let newEndTime = Math.floor(now.setDate(now.getDate() + 4)/1000);
+    await instanceDefault.updateEndTime(newEndTime);
+    let currentEndTime = await instanceDefault.endTime();
+    assert.equal(newEndTime, currentEndTime);
+
+    newEndTime = Math.floor(now.setDate(now.getDate() + 6)/1000);
+    await instanceDefault.updateEndTime(newEndTime);
+    currentEndTime = await instanceDefault.endTime();
+    assert.equal(newEndTime, currentEndTime);
+  
+  });
+
+  it("should not update end timestamp less than start times", async () => {
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, true)
+
+    let now = new Date();
+    let newEndTime = Math.floor(now.setDate(now.getDate() - 10)/1000);
+    assertRevert(instanceDefault.updateStartTime(newEndTime))  
+  });
+
+  it("should not update end timestamp in closed offering", async () => {
+    await instanceDefault.endOffering();
+
+    let isOfferingStarted = await instanceDefault.isOfferingStarted();
+    assert.equal(isOfferingStarted, false)
+
+    let now = new Date();
+    let newEndTime = Math.floor(now.setDate(now.getDate() + 10)/1000);
+    assertRevert(instanceDefault.updateStartTime(newEndTime))  
+  });
+
 });
+
+
+
+const assertRevert = async promise => {
+  try {
+    await promise;
+    assert.fail('Expected revert not received');
+  } catch (error) {
+    const revertFound = error.message.search('revert') >= 0;
+    assert(revertFound, `Expected "revert", got ${error} instead`);
+  }
+};
