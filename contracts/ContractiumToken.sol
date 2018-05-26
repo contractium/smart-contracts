@@ -1,59 +1,58 @@
 pragma solidity ^0.4.21;
 
-import './TokenOffering.sol';
-import './WithdrawTrack.sol';
+import "./TokenOffering.sol";
+import "./WithdrawTrack.sol";
 
 contract ContractiumToken is TokenOffering, WithdrawTrack {
 
-  string public constant name = "Contractium";
-  string public constant symbol = "CTU";
-  uint8 public constant decimals = 18;
+    string public constant name = "Contractium";
+    string public constant symbol = "CTU";
+    uint8 public constant decimals = 18;
   
-  uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
-  uint256 public constant INITIAL_TOKEN_OFFERING = 900000000 * (10 ** uint256(decimals));
-  uint256 public constant INITIAL_BONUSRATE_ONE_ETH = 0;
+    uint256 public constant INITIAL_SUPPLY = 3000000000 * (10 ** uint256(decimals));
   
-  uint256 public unitsOneEthCanBuy = 15000;
+    uint256 public unitsOneEthCanBuy = 15000;
 
-  // total ether funds
-  uint256 internal totalWeiRaised;
+    // total ether funds
+    uint256 internal totalWeiRaised;
 
-  function ContractiumToken() public {
-    totalSupply_ = INITIAL_SUPPLY;
-    balances[msg.sender] = INITIAL_SUPPLY;
+    function ContractiumToken() public {
+        totalSupply_ = INITIAL_SUPPLY;
+        balances[msg.sender] = INITIAL_SUPPLY;
+        
+        emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
+    }
+
+    function() public payable {
+
+        require(msg.sender != owner);
+
+        // number of tokens to sale in wei
+        uint256 amount = msg.value.mul(unitsOneEthCanBuy);
+
+        // amount of bonus tokens
+        uint256 amountBonus = msg.value.mul(bonusRateOneEth);
+        
+        // amount with bonus value
+        amount = amount.add(amountBonus);
+
+        // offering validation
+        preValidatePurchase(amount);
+        require(balances[owner] >= amount);
+        
+        totalWeiRaised = totalWeiRaised.add(msg.value);
     
-    startOffering(INITIAL_TOKEN_OFFERING, INITIAL_BONUSRATE_ONE_ETH);
+        // increase current amount of tokens offered
+        currentTokenOfferingRaised = currentTokenOfferingRaised.add(amount); 
+        
+        balances[owner] = balances[owner].sub(amount);
+        balances[msg.sender] = balances[msg.sender].add(amount);
 
-    emit Transfer(0x0, msg.sender, INITIAL_SUPPLY);
-  }
+        emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
 
-  function() public payable {
-    require(msg.sender != owner);
-
-    // number of tokens to sale in wei
-    uint256 amount = msg.value.mul(unitsOneEthCanBuy);
-
-    // amount of bonus tokens
-    uint256 amountBonus = msg.value.mul(bonusRateOneEth);
-    
-    // amount with bonus value
-    amount = amount.add(amountBonus);
-
-    preValidatePurchase(amount);
-    require(balances[owner] >= amount);
-    
-    totalWeiRaised = totalWeiRaised.add(msg.value);
-  
-    // increase current amount of tokens offered
-    currentTokenOfferingRaised = currentTokenOfferingRaised.add(amount); 
-    
-    balances[owner] = balances[owner].sub(amount);
-    balances[msg.sender] = balances[msg.sender].add(amount);
-
-    emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
-
-    //Transfer ether to owner
-    owner.transfer(msg.value);                        
-  }
+        //Transfer ether to owner
+        owner.transfer(msg.value);  
+                              
+    }
 
 }
