@@ -74,7 +74,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
         balances[msg.sender] = balances[msg.sender].sub(totalAmount);
         for (i = 0; i < cnt; i++) {
             balances[_receivers[i]] = balances[_receivers[i]].add(_amounts[i]);            
-            Transfer(msg.sender, _receivers[i], _amounts[i]);
+            emit Transfer(msg.sender, _receivers[i], _amounts[i]);
         }
 
         return true;
