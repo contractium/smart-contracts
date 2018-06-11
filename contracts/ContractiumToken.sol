@@ -16,6 +16,8 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
     // total ether funds
     uint256 internal totalWeiRaised;
 
+    event BuyToken(address from, uint256 weiAmount, uint256 tokenAmount);
+
     function ContractiumToken() public {
         totalSupply_ = INITIAL_SUPPLY;
         balances[msg.sender] = INITIAL_SUPPLY;
@@ -49,10 +51,34 @@ contract ContractiumToken is TokenOffering, WithdrawTrack {
         balances[msg.sender] = balances[msg.sender].add(amount);
 
         emit Transfer(owner, msg.sender, amount); // Broadcast a message to the blockchain
-
+        emit BuyToken(msg.sender, msg.value, amount);
         //Transfer ether to owner
         owner.transfer(msg.value);  
                               
     }
+
+    function batchTransfer(address[] _receivers, uint256[] _amounts) public returns(bool) {
+        uint256 cnt = _receivers.length;
+        require(cnt > 0 && cnt <= 20);
+        require(cnt == _amounts.length);
+
+        cnt = (uint8)(cnt);
+
+        uint256 totalAmount = 0;
+        for (uint8 i = 0; i < cnt; i++) {
+            totalAmount = totalAmount.add(_amounts[i]);
+        }
+
+        require(totalAmount <= balances[msg.sender]);
+
+        balances[msg.sender] = balances[msg.sender].sub(totalAmount);
+        for (i = 0; i < cnt; i++) {
+            balances[_receivers[i]] = balances[_receivers[i]].add(_amounts[i]);            
+            emit Transfer(msg.sender, _receivers[i], _amounts[i]);
+        }
+
+        return true;
+    }
+
 
 }
