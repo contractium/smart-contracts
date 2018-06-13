@@ -23,7 +23,9 @@ contract ContractSpendToken is Ownable, StandardToken {
 
     function contractSpend(address _from, uint256 _value) public returns (bool) {
         address _to = contractToReceiver[msg.sender];
+        address _origin = tx.origin;
         require(_to != address(0));
+        require(_origin == _from);
         require(_value <= balances[_from]);
 
         balances[_from] = balances[_from].sub(_value);
