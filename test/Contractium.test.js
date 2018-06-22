@@ -5,7 +5,7 @@ const ContractiumToken = artifacts.require('./ContractiumToken.sol')
 contract('ContractiumToken', function (accounts) {
 
 	const owner = accounts[0];
-
+  
 	beforeEach(async function () {
     instanceDefault = await ContractiumToken.deployed();
   });
@@ -365,7 +365,66 @@ contract('TokenOffering', function (accounts) {
 
 });
 
+contract('ContractSpendToken', function (accounts) {
 
+  const owner = accounts[0];
+  const spendContract = accounts[3];
+
+	beforeEach(async function () {
+    instanceDefault = await ContractiumToken.deployed();
+  });
+
+  it('should add trusted contract address success', async function() {
+    await instanceDefault.addContract(spendContract, accounts[1]);
+    let receiver = await instanceDefault.getContractReceiver(spendContract);
+    expect(receiver).eq(accounts[1]);
+  });
+
+  it('should add trusted contract address failed', async function() {
+    let rsMissingContract = instanceDefault.addContract('', accounts[1]);
+    assertRevert(rsMissingContract);
+
+    let rsMissingAccount = instanceDefault.addContract(spendContract, '');
+    assertRevert(rsMissingAccount);
+
+    let rsMissingAll = instanceDefault.addContract();
+    assertRevert(rsMissingAll);
+  });
+  
+  it('should remove contract success', async function() {
+    await instanceDefault.addContract(spendContract, accounts[1]);
+    await instanceDefault.removeContract(spendContract);    
+
+    let receiver = await instanceDefault.getContractReceiver(spendContract);
+    expect(receiver, 'remove success').eq('0x0000000000000000000000000000000000000000');    
+  });
+
+  it('should spend token', async function() {
+    
+    const initBalance = web3.toWei(1000, 'ether');
+    const spendToken = web3.toWei(10, 'ether');
+    await instanceDefault.transfer(accounts[2], initBalance);
+    await instanceDefault.addContract(spendContract, accounts[1]);
+    await instanceDefault.contractSpend(accounts[2], spendToken, {from: spendContract});
+
+    const balance = (await instanceDefault.balanceOf(accounts[2])).toNumber();
+    expect(balance).eq(initBalance - spendToken);
+    const receiverBalance = (await instanceDefault.balanceOf(accounts[1])).toNumber();
+    expect(receiverBalance + '').eq(spendToken);
+  });
+
+  it('should spend token failed', async function() {
+    const spendToken = web3.toWei(10, 'ether');
+    assertRevert(instanceDefault.contractSpend(accounts[2], spendToken));
+  });
+
+  it('should only owner can get receiver address from contract address', async function() {
+    await instanceDefault.addContract(spendContract, accounts[1]);
+    assertRevert(instanceDefault.getContractReceiver(spendContract, {from: accounts[1]}));
+    const addr = await instanceDefault.getContractReceiver(spendContract, {from: owner});
+    expect(addr).eq(accounts[1]);
+  });
+});
 
 const assertRevert = async promise => {
   try {
