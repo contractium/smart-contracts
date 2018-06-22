@@ -2,8 +2,9 @@ pragma solidity ^0.4.21;
 
 import "./TokenOffering.sol";
 import "./WithdrawTrack.sol";
+import "./ContractSpendToken.sol";
 
-contract ContractiumToken is TokenOffering, WithdrawTrack {
+contract ContractiumToken is TokenOffering, WithdrawTrack, ContractSpendToken {
 
     string public constant name = "Contractium";
     string public constant symbol = "CTU";
