@@ -7,7 +7,8 @@ contract('ContractiumToken', function (accounts) {
 	const owner = accounts[0];
   
 	beforeEach(async function () {
-    instanceDefault = await ContractiumToken.deployed();
+    // isolated contract instance
+    instanceDefault = await ContractiumToken.new();    
   });
 
  	it("should have 18 decimal places", async () => {
@@ -53,7 +54,13 @@ contract('ContractiumToken', function (accounts) {
     assert.equal(balance, 16e+21);
   });
 
-  it("should be received 15000 tokens when send eth to contract", async () => {
+  it("should be received 16000 tokens when send eth to contract", async () => {
+    let now = new Date();
+    let startTime = Math.floor(now.getTime()/1000);
+    let endTime = Math.floor(now.setDate(now.getDate() + 2)/1000);
+
+    let result = await instanceDefault.startOffering(9e26, 1000, startTime, endTime, true);
+
     let sendFrom = accounts[1];
     let ownerBalanceBefore = web3.fromWei(web3.eth.getBalance(accounts[0])).toNumber();
     let senderBalanceBefore = web3.fromWei(web3.eth.getBalance(sendFrom)).toNumber();
@@ -175,9 +182,99 @@ contract('ContractiumToken', function (accounts) {
     
   // });
 
+  it("should batchTransfer reverts when the number of receivers greater than 20", async () => {
+    let receivers = accounts;
+    let values = Array.from({length: receivers.length}).map((_, i) => i * 1e18);
+
+    expect(receivers, 'number of accounts greater than 20').has.property('length').gt(20);
+    expect(values).length(receivers.length);
+
+    assertRevert(instanceDefault.batchTransfer(receivers, values));
+  });
+
+  it("should batchTransfer reverts when number of receivers differences from values", async () => {
+    let receivers = accounts;
+    let values = Array.from({length: 1}).map((_, i) => i * 1e18);
+
+    expect(receivers, 'number of accounts greater than 20').has.property('length').gt(20);
+    expect(values, 'the number of values difference from receivers').has.property('length').lt(receivers.length);
+
+    assertRevert(instanceDefault.batchTransfer(receivers, values));
+  });
+
+  it("should batchTransfer reverts when total values greater than sender's balance", async () => {
+    let sender = accounts[1];    
+    let senderBalance = (await instanceDefault.balanceOf(sender)).toNumber();
+    expect(senderBalance, 'sender has 0 token').eq(0);
+
+    let receivers = accounts.slice(10, 20);
+    let values = Array.from({length: receivers.length}).map((_, i) => i * 1e18);    
+
+    assertRevert(instanceDefault.batchTransfer(receivers, values, {from: sender}));
+  });
+
+  it("should batchTransfer reverts when total values overflow uint256", async () => {
+    let sender = accounts[1];
+    const amountSenderBalance = web3.toWei(100, 'ether');
+    await instanceDefault.transfer(sender, amountSenderBalance);
+    let senderBalance = (await instanceDefault.balanceOf(sender)).toString();
+    expect(senderBalance).eq(amountSenderBalance);
+
+    let receivers = accounts.slice(10, 20);
+    let values = Array.from({length: receivers.length}).map( (_, i) => Math.pow(2, 255));
+    
+    await instanceDefault.batchTransfer(receivers, values, {from: sender})
+    .then(_ => assert.fail("execution dose not throw error"))
+    .catch(err => {
+      expect(err.message).include('invalid opcode');
+    });
+
+    await Promise.all(receivers.map(address => instanceDefault.balanceOf(address)))
+    .then(balances => {
+      for (let balance of balances) {
+        expect(balance.toNumber()).eq(0);
+      }
+    });
+  });
+
+  it("should batchTransfer reverts when balance isn't enough", async () => {
+    let sender = accounts[1];
+    const amountSenderBalance = web3.toWei(100, 'ether');
+    await instanceDefault.transfer(sender, amountSenderBalance);
+    let senderBalance = (await instanceDefault.balanceOf(sender)).toString();
+    expect(senderBalance).eq(amountSenderBalance);
+
+    let receivers = accounts.slice(10, 20);
+    let values = Array.from({length: receivers.length}).map( (_, i) => web3.toWei(11, 'ether'));
+
+    assertRevert(instanceDefault.batchTransfer(receivers, values, {from: sender}));
+  });
+
+  it("should batchTransfer success", async () => {
+    let sender = owner;
+    let senderBalanceBefore = (await instanceDefault.balanceOf(sender)).toNumber();
+    let receivers = accounts.slice(10, 20);
+    let values = Array.from({length: receivers.length}).map( (_, i) => web3.toWei(i + '', 'ether'));
+    let totalToken = values.reduce((sum, n, i) => sum + i, 0); //token
+    totalToken = totalToken * 1e18;
+
+    await instanceDefault.batchTransfer(receivers, values, {from: sender});
+
+    await Promise.all(receivers.map(address => instanceDefault.balanceOf(address)))
+    .then(balances => {
+      balances.forEach((balance, i) => {
+        expect(balance.toString(), 'each receiver received token').eq(web3.toWei(i + '', 'ether'));
+      });
+    });
+
+    let senderBalanceAfter = (await instanceDefault.balanceOf(sender)).toNumber();
+    expect(senderBalanceAfter, 'sender balance must be substracted equal total value').eq(senderBalanceBefore - totalToken);
+  });
+
+
 });
 
-contract('TokenOffering', function (accounts) {
+contract.skip('TokenOffering', function (accounts) {
 
   it("should burn remain token when closing offering", async () => {
     let now = new Date();
@@ -361,7 +458,7 @@ contract('TokenOffering', function (accounts) {
 
     assert.equal( await instanceDefault.isBurnInClose(), false )
     
-  });
+  });  
 
 });
 
