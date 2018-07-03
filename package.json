@@ -23,9 +23,10 @@
   "devDependencies": {
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.4.15",
-    "zeppelin-solidity": "^1.8.0"
+    "zeppelin-solidity": "1.10.0"
   },
   "dependencies": {
+    "openzeppelin-solidity": "1.10.0",
     "truffle-hdwallet-provider-privkey": "^0.2.0"
   }
 }
