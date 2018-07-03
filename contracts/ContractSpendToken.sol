@@ -33,4 +33,8 @@ contract ContractSpendToken is Ownable, StandardToken {
         emit Transfer(_from, _to, _value);
         return true;
     }
+
+    function getOwner() public view returns (address) {
+        return owner;
+    }
 }
