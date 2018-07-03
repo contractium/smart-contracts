@@ -19,7 +19,7 @@ contract ContractiumToken is TokenOffering, WithdrawTrack, ContractSpendToken {
 
     event BuyToken(address from, uint256 weiAmount, uint256 tokenAmount);
 
-    function ContractiumToken() public {
+    function ContractiumToken() payable public {
         totalSupply_ = INITIAL_SUPPLY;
         balances[msg.sender] = INITIAL_SUPPLY;
         
