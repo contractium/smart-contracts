@@ -76,15 +76,30 @@ contract AirdropContractium is Ownable {
     uint256 public reward = 200 * (10 ** uint256(decimals));
     uint256 public remainAirdrop;
    
+    event Submit(address _addr, bool _isSuccess);
+   
     constructor() public {
         owner = msg.sender;
         remainAirdrop = INITIAL_AIRDROP;
         ctuContract = ContractiumInterface(CTU_ADDRESS);
     }
     
-    function submit() public isNotSubmitted isRemain returns (bool) {
+    function getAirdrop() public isNotSubmitted isRemain returns (bool) {
+        return submit(msg.sender);
+    }
+    
+    function batchSubmit(address[] _addresses) public onlyOwner {
+        for(uint i; i < _addresses.length; i++) {
+            if (!submitted[_addresses[i]]) {
+                submit(_addresses[i]);
+            }
+        }
+    }
+    
+    
+    function submit(address _addr) private returns (bool) {
         address _from = ctu_owner;
-        address _to = msg.sender;
+        address _to = _addr;
         uint256 _value = uint256(reward);
         bool isSuccess = ctuContract.transferFrom(_from, _to, _value);
         
@@ -92,6 +107,8 @@ contract AirdropContractium is Ownable {
             submitted[_to] = true;
             remainAirdrop = remainAirdrop.sub(_value);
         }
+        
+        emit Submit(_addr, isSuccess);
         
         closeAirdrop();
         return isSuccess;
