@@ -33,7 +33,7 @@ contract ContractiumInterface {
     function transferFrom(address from, address to, uint256 value) public returns (bool);
     function contractSpend(address _from, uint256 _value) public returns (bool);
     function allowance(address _owner, address _spender) public view returns (uint256);
-    function getOwner() public view returns (address);
+    function owner() public view returns (address);
 }
 
 contract Ownable {
@@ -140,7 +140,7 @@ contract AirdropContractium is Ownable {
     function setCtuContract(address _ctuAddress) public onlyOwner  returns (bool) {
         require(_ctuAddress != address(0x0));
         ctuContract = ContractiumInterface(_ctuAddress);
-        ctu_owner = ctuContract.getOwner();
+        ctu_owner = ctuContract.owner();
         return true;
     }
     
