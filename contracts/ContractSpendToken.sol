@@ -42,7 +42,4 @@ contract ContractSpendToken is StandardToken, Ownable {
     return contractToReceiver[_contractAdd];
   }
   
-  function getOwner() public view returns (address) {
-      return owner;
-  }
 }
