@@ -206,6 +206,11 @@ contract MvpContract is Ownable {
         return true;
     }
 
+    function setFee(uint256 _fee) public onlyOwner returns (bool) {
+        fee = _fee;
+        return true;
+    }
+
     function transferOwnership(address _addr) public onlyOwner{
         super.transferOwnership(_addr);
     }
