@@ -1,38 +1,19 @@
 pragma solidity ^0.4.18 ;
 pragma experimental ABIEncoderV2 ;
 
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+
 contract ContractiumInterface {
     function balanceOf(address who) public view returns (uint256);
     function contractSpend(address _from, uint256 _value) public returns (bool);
-}
-
-contract Ownable {
-  address public owner;
-
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-  function Ownable() public {
-    owner = msg.sender;
-  }
-
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-  
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
 }
 
 contract MvpContract is Ownable {
 
     ContractiumInterface ctuContract;
     uint8 public constant decimals = 18;
-    uint256 fee = 50 * (10 ** uint256(decimals));
-    address owner;
+    uint256 public fee = 50 * (10 ** uint256(decimals));
+    address public owner;
 
     struct Party {
         address addr;
@@ -44,6 +25,7 @@ contract MvpContract is Ownable {
         Party partyB;
 
         string content;
+        string checksum;
         bool validate;
     }
 
@@ -67,13 +49,13 @@ contract MvpContract is Ownable {
     *  Create contract
     */
 
-    function createContract(address _addrB, string _content) public returns (bool) {
+    function createContract(address _addrB, string _content, string _checksum) public returns (bool) {
         require(!contractCreated[_content]);
 
         Party memory partyA = Party(msg.sender, false);
         Party memory partyB = Party(_addrB, false);
 
-        LaborContract memory c = LaborContract(partyA, partyB, _content, false);
+        LaborContract memory c = LaborContract(partyA, partyB, _content, _checksum, false);
 
         contracts.push(c);
         contentToContract[_content] = c;
@@ -148,14 +130,14 @@ contract MvpContract is Ownable {
         }
     }
 
-    function getContractByKey(string _key) public view isCreated(_key) returns (address partyA, address partyB, bool partyASigned, bool partyBSigned, bool validate) {
+    function getContractByKey(string _key) public view isCreated(_key) returns (address partyA, address partyB, bool partyASigned, bool partyBSigned, bool validate, string checksum) {
         LaborContract storage c = contentToContract[_key];
-        return (c.partyA.addr, c.partyB.addr, c.partyA.isSigned, c.partyB.isSigned, c.validate);
+        return (c.partyA.addr, c.partyB.addr, c.partyA.isSigned, c.partyB.isSigned, c.validate, c.checksum);
     }
 
 
     function MvpContract() {
-        ctuContract =  ContractiumInterface(0x1b7ed7b675e8dbfc7eefa9ada5af37ccd93ab93b);
+        ctuContract =  ContractiumInterface(0x0dc319Fa14b3809ea2f0f9Ae28311f957a9bE4a3);
         owner = msg.sender;
     }
 
@@ -163,31 +145,32 @@ contract MvpContract is Ownable {
         return ctuContract.balanceOf(msg.sender);
     }
     
-    function getContractsOfAddr() public view returns (address[] partyA, address[] partyB, string[] content, bool[] partyASigned, bool[] partyBSigned) {
+    function getContractsOfAddr() public view returns (address[] partyA, address[] partyB, bool[] partyASigned, bool[] partyBSigned, string[] content, string[] checksum) {
         LaborContract[] storage contractsUser = contractsByUser[msg.sender]; 
 
         return formatDataReturn(contractsUser);
     }
     
-    function getContractsByAddr(address _addr) public view onlyOwner returns (address[] partyA, address[] partyB, string[] content, bool[] partyASigned, bool[] partyBSigned) {
+    function getContractsByAddr(address _addr) public view onlyOwner returns (address[] partyA, address[] partyB, bool[] partyASigned, bool[] partyBSigned, string[] content, string[] checksum) {
         require(_addr != address(0x0));
         LaborContract[] storage contractsUser = contractsByUser[_addr]; 
         
         return formatDataReturn(contractsUser);
     }
     
-    function getAllContracts() public view onlyOwner returns (address[] partyA, address[] partyB, string[] content, bool[] partyASigned, bool[] partyBSigned) {
+    function getAllContracts() public view onlyOwner returns (address[] partyA, address[] partyB, bool[] partyASigned, bool[] partyBSigned, string[] content, string[] checksum) {
         return formatDataReturn(contracts);
     }
     
-    function formatDataReturn(LaborContract[] _contracts) internal returns (address[] partyA, address[] partyB, string[] content, bool[] partyASigned, bool[] partyBSigned) {
+    function formatDataReturn(LaborContract[] _contracts) internal returns (address[] partyA, address[] partyB, bool[] partyASigned, bool[] partyBSigned, string[] content, string[] checksum) {
         uint length = _contracts.length;
         
         address[] memory _partyA = new address[](length);
         address[] memory _partyB = new address[](length);
-        string[] memory _content = new string[](length);
         bool[] memory _partyASigned = new bool[](length);
         bool[] memory _partyBSigned = new bool[](length);
+        string[] memory _content = new string[](length);
+        string[] memory _checksum = new string[](length);
         
         for (uint i = 0; i < length; i++) {
           _partyA[i] = _contracts[i].partyA.addr;
@@ -195,19 +178,15 @@ contract MvpContract is Ownable {
           _partyASigned[i] = _contracts[i].partyA.isSigned;
           _partyBSigned[i] = _contracts[i].partyB.isSigned;
           _content[i] = _contracts[i].content;
+          _checksum[i] = _contracts[i].checksum;
         }
         
-        return (_partyA, _partyB, _content, _partyASigned, _partyBSigned);
+        return (_partyA, _partyB, _partyASigned, _partyBSigned, _content, _checksum);
     }
     
     function setCtuContract(address _ctuAddress) public onlyOwner  returns (bool) {
         require(_ctuAddress != address(0x0));
         ctuContract = ContractiumInterface(_ctuAddress);
-        return true;
-    }
-
-    function setFee(uint256 _fee) public onlyOwner returns (bool) {
-        fee = _fee;
         return true;
     }
 
