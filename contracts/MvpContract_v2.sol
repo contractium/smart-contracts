@@ -137,6 +137,7 @@ contract MvpContract is Ownable {
         for (uint i = 0; i < _addresses.length; i++) {
             contractsByUser[_addresses[i]].push(c);
         }
+        addpartyAddresses(_addresses, _addr, _content);
         
         contractCount++;
         
@@ -150,7 +151,7 @@ contract MvpContract is Ownable {
         c.addr2Party[_creator] = party;
         c.partyAddresses.push(_creator);
         for (uint i = 0; i < _addresses.length; i++) {
-            if (_addresses[i] != address(0x0)) {
+            if (_addresses[i] != address(0x0) && _addresses[i] != _creator) {
                 party = Party(_addresses[i], false);
                 c.addr2Party[_addresses[i]] = party;
                 c.partyAddresses.push(_addresses[i]);
