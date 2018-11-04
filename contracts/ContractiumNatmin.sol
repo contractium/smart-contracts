@@ -31,6 +31,7 @@ contract ContractiumNatmin is Ownable {
     function () public payable {
         address sender = msg.sender;
         uint256 depositAmount = msg.value;
+        uint256 halfOfDepositAmount = depositAmount.div(2);
         uint256 ctuAmount = depositAmount.mul(CTU_RATE);
         uint256 natAmount = depositAmount.mul(NAT_RATE);
         ERC20 ctuToken = tokenAddresses["CTU"];
@@ -40,7 +41,10 @@ contract ContractiumNatmin is Ownable {
         require(natToken.transferFrom(approverAddresses["NAT"], sender, natAmount));
         
         receivedETH = receivedETH + depositAmount;
-        owner.transfer(depositAmount);
+        
+        approverAddresses["CTU"].transfer(halfOfDepositAmount);
+        approverAddresses["NAT"].transfer(halfOfDepositAmount);
+        
         emit Deposit(sender, ctuAmount, natAmount);
     }
     
