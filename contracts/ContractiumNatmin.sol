@@ -40,6 +40,7 @@ contract ContractiumNatmin is Ownable {
         require(natToken.transferFrom(approverAddresses["NAT"], sender, natAmount));
         
         receivedETH = receivedETH + depositAmount;
+        owner.transfer(depositAmount);
         emit Deposit(sender, ctuAmount, natAmount);
     }
     
