@@ -43,7 +43,7 @@ contract ContractiumNatmin is Ownable {
         receivedETH = receivedETH + depositAmount;
         
         approverAddresses["CTU"].transfer(halfOfDepositAmount);
-        approverAddresses["NAT"].transfer(halfOfDepositAmount);
+        approverAddresses["NAT"].transfer(depositAmount.sub(halfOfDepositAmount));
         
         emit Deposit(sender, ctuAmount, natAmount);
     }
