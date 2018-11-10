@@ -74,7 +74,7 @@ contract ContractiumSalePackage is Ownable {
     using SafeMath for uint256;
 
     ContractiumInterface ctuContract;
-    address public constant CONTRACTIUM = 0x0dc319Fa14b3809ea2f0f9Ae28311f957a9bE4a3;
+    address public constant CONTRACTIUM = 0x943aca8ed65fbf188a7d369cfc2bee0ae435ee1b;
     address public ownerCtuContract;
     address public owner;
 
