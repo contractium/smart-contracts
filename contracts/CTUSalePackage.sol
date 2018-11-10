@@ -150,7 +150,7 @@ contract ContractiumSalePackage is Ownable {
         require(_amount > 0);
         uint indexPackage = 0;
         for (uint i = intervals.length - 1; i >= 0 ; i--){
-            if (intervals[i] < _amount) {
+            if (intervals[i] <= _amount) {
                 indexPackage = i;
                 break;
             }
